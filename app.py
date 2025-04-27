@@ -84,7 +84,7 @@ def user_page():
         filtered_df = df.copy()
 
     # Tampilkan hanya kolom tertentu
-    kolom_tampil = ['PERUSAHAAN', 'NOPEK', 'NAMA', 'PENANGGUNG', 'NAMA_KARTU', 'STS', 'DOB', 'KELAS_RAWAT_INAP']
+    kolom_tampil = ['PERUSAHAAN', 'NOPEK', 'NAMA', 'PENANGGUNG', 'STS', 'DOB', 'KELAS_RAWAT_INAP']
     available_cols = [col for col in kolom_tampil if col in filtered_df.columns]
     display_df = filtered_df[available_cols]
 
