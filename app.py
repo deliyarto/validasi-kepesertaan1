@@ -1,87 +1,115 @@
-import os
 import streamlit as st
 import pandas as pd
+import os
+import io
+from datetime import datetime
 
-st.set_page_config(page_title="Validasi Kepesertaan", layout="wide")
+# Konstanta
+UPLOAD_FOLDER = "uploaded_files"
+ADMIN_PASSWORD = "admin123"  # Ganti sesuai kebutuhan
 
-# --- SETUP FOLDER DATA ---
-DATA_FOLDER = "data"
-os.makedirs(DATA_FOLDER, exist_ok=True)
+# Pastikan folder upload ada
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# --- SETUP ADMIN ---
-admin_password = "admin123"
-is_admin = False
+# Cek status login
+if 'is_admin' not in st.session_state:
+    st.session_state.is_admin = False
 
-with st.expander("🔒 Login Admin (Khusus Admin)"):
-    password_input = st.text_input("Masukkan Password Admin", type="password")
-    if password_input == admin_password:
-        st.success("Login sebagai Admin berhasil!")
-        is_admin = True
-    elif password_input:
-        st.error("Password salah!")
-
-# ===================
-# BAGIAN ADMIN
-# ===================
-if is_admin:
-    st.header("🛠 Admin Panel – Upload / Hapus File Data")
-
-    uploaded_file = st.file_uploader("📤 Upload file Excel (.xlsx) atau CSV (.csv)", type=["xlsx", "csv"])
-    if uploaded_file is not None:
-        file_path = os.path.join(DATA_FOLDER, uploaded_file.name)
-        with open(file_path, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        st.success(f"✅ File {uploaded_file.name} berhasil disimpan!")
-
-    st.subheader("🗂 File Tersimpan")
-    file_list = os.listdir(DATA_FOLDER)
-    for file_name in file_list:
-        col1, col2 = st.columns([6, 1])
-        with col1:
-            st.write(f"📄 {file_name}")
-        with col2:
-            if st.button(f"Hapus {file_name}", key=f"hapus_{file_name}"):
-                os.remove(os.path.join(DATA_FOLDER, file_name))
-                st.success(f"✅ File {file_name} berhasil dihapus!")
-                st.experimental_rerun()
-
-else:
-    st.info("Login admin untuk mengupload atau menghapus file.")
-
-# ===================
-# BAGIAN USER UMUM
-# ===================
-st.header("🔎 Pencarian Data Peserta")
-
-file_list = os.listdir(DATA_FOLDER)
-
-if file_list:
-    search_nama = st.text_input("Cari berdasarkan Nama").strip().lower()
-    search_nopek = st.text_input("Cari berdasarkan Nopek").strip()
-
-    all_dataframes = []
-    for file_name in file_list:
-        file_path = os.path.join(DATA_FOLDER, file_name)
-        try:
-            if file_name.endswith(".csv"):
-                df = pd.read_csv(file_path, dtype=str)
+# Sidebar login/logout
+with st.sidebar:
+    if st.session_state.is_admin:
+        st.success("Login sebagai Admin ✅")
+        if st.button("Logout"):
+            st.session_state.is_admin = False
+    else:
+        password = st.text_input("Masuk sebagai Admin", type="password")
+        if st.button("Login"):
+            if password == ADMIN_PASSWORD:
+                st.session_state.is_admin = True
+                st.success("Login berhasil!")
             else:
-                df = pd.read_excel(file_path, dtype=str)
-            df.fillna("-", inplace=True)
-            all_dataframes.append(df)
-        except Exception as e:
-            st.error(f"Gagal membaca {file_name}: {e}")
+                st.error("Password salah!")
 
-    final_df = pd.concat(all_dataframes, ignore_index=True)
+# Fungsi untuk load semua file Excel/CSV
+def load_all_data():
+    all_dfs = []
+    for filename in os.listdir(UPLOAD_FOLDER):
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        if filename.endswith(".xlsx"):
+            df = pd.read_excel(file_path, engine='openpyxl')
+            all_dfs.append(df)
+        elif filename.endswith(".csv"):
+            df = pd.read_csv(file_path)
+            all_dfs.append(df)
+    if all_dfs:
+        return pd.concat(all_dfs, ignore_index=True)
+    else:
+        return pd.DataFrame()
+
+# Halaman utama
+st.title("🔎 Cek Kepesertaan")
+
+if st.session_state.is_admin:
+    st.header("📤 Upload File Baru")
+
+    uploaded_file = st.file_uploader("Upload file Excel/CSV", type=["xlsx", "csv"])
+    if uploaded_file is not None:
+        # Simpan file ke folder UPLOAD_FOLDER
+        file_ext = uploaded_file.name.split(".")[-1]
+        save_path = os.path.join(UPLOAD_FOLDER, f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.{file_ext}")
+        with open(save_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        st.success(f"File berhasil diupload: {save_path}")
+
+    st.header("🗑️ Hapus File yang Ada")
+    files = os.listdir(UPLOAD_FOLDER)
+    if files:
+        file_to_delete = st.selectbox("Pilih file untuk dihapus", files)
+        if st.button("Hapus File"):
+            os.remove(os.path.join(UPLOAD_FOLDER, file_to_delete))
+            st.success(f"File {file_to_delete} berhasil dihapus!")
+    else:
+        st.info("Belum ada file yang diupload.")
+
+st.header("🔍 Cari Peserta")
+
+# Search input (hanya satu, tidak per file)
+search_nama = st.text_input("Cari berdasarkan Nama").lower()
+search_nopek = st.text_input("Cari berdasarkan Nopek").lower()
+
+df = load_all_data()
+
+if not df.empty:
+    # Filter kolom yang mau ditampilkan
+    selected_columns = [
+        "PERUSAHAAN", "NOPEK", "NAMA", "PENANGGUNG", "NAMA_KARTU",
+        "STS", "KD_STS", "DOB", "KELAS", "KELAS_RAWAT_INAP"
+    ]
 
     if search_nama or search_nopek:
-        filtered_df = final_df[
-            (final_df['NAMA'].str.lower().str.contains(search_nama, na=False)) &
-            (final_df['NOPEK'].str.contains(search_nopek, na=False))
+        filtered_df = df[
+            (df['NAMA'].str.lower().str.contains(search_nama)) &
+            (df['NOPEK'].str.lower().str.contains(search_nopek))
         ]
-        st.write(f"🔎 Hasil pencarian ({len(filtered_df)} data):")
-        st.dataframe(filtered_df, use_container_width=True)
     else:
-        st.write("Masukkan Nama atau Nopek untuk mencari data peserta.")
+        filtered_df = df
+
+    display_df = filtered_df[selected_columns]
+
+    st.dataframe(display_df)
+
+    # Tombol download hasil pencarian
+    if not display_df.empty:
+        buffer = io.BytesIO()
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            display_df.to_excel(writer, index=False)
+        buffer.seek(0)
+
+        st.download_button(
+            label="💾 Download Hasil sebagai Excel",
+            data=buffer,
+            file_name=f"hasil_pencarian_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 else:
-    st.warning("⚠️ Belum ada file di folder data.")
+    st.warning("Belum ada data tersedia. Admin perlu upload file dulu.")
