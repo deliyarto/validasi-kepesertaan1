@@ -34,6 +34,7 @@ columns_to_show = ['KODE_KARTU','KELUAR', 'PERUSAHAAN', 'NAMA', 'PENANGGUNG', 'S
 if search_query:
     filtered_data = data[
         data['NOPEK'].fillna('').str.contains(search_query, case=False, na=False) |
+        data['KODE_KARTU'].fillna('').str.contains(search_query, case=False, na=False) |
         data['PERUSAHAAN'].fillna('').str.contains(search_query, case=False, na=False) |
         data['NAMA'].fillna('').str.contains(search_query, case=False, na=False) |
         data['PENANGGUNG'].fillna('').str.contains(search_query, case=False, na=False) |
