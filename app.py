@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # URL CSV export dari Google Sheets (pastikan ini URL CSV)
-sheet_url = "https://docs.google.com/spreadsheets/d/1av0iPfTKLKwpsc8XJ_YWesY_MFvhRAN8Nr70Vl0pqbE/export?format=csv&gid=1304734176"
+sheet_url = "https://docs.google.com/spreadsheets/d/1av0iPfTKLKwpsc8XJ_YWesY_MFvhRAN8Nr70Vl0pqbE/export?format=csv&gid=1960112248"
 
 # Fungsi untuk membaca data dari Google Sheets
 @st.cache_data
@@ -13,6 +13,10 @@ def load_data():
     except Exception as e:
         st.error(f"Gagal membaca data dari Google Sheets: {e}")
         return pd.DataFrame()
+        
+# Tombol untuk reload data
+if st.button("🔄 Muat Ulang Data Terbaru"):
+    st.cache_data.clear()  # Ini akan menghapus cache lama
 
 # Load data
 data = load_data()
