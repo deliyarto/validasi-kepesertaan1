@@ -15,7 +15,7 @@ def load_data():
         return pd.DataFrame()
         
 # Tombol untuk reload data
-if st.button("🔄 Muat Ulang Data Terbaru"):
+if st.button("🔄 Muat Ulang Data Terbaru coy"):
     st.cache_data.clear()  # Ini akan menghapus cache lama
 
 # Load data
@@ -56,4 +56,5 @@ else:
 
 # Catatan kecil
 st.caption("Data peserta bersumber dari Google Sheets.")
+
 
