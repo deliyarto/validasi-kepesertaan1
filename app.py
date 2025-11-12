@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # URL CSV export dari Google Sheets (pastikan ini URL CSV)
-sheet_url = "https://docs.google.com/spreadsheets/d/1av0iPfTKLKwpsc8XJ_YWesY_MFvhRAN8Nr70Vl0pqbE/export?format=csv&gid=416166594"
+sheet_url = "https://docs.google.com/spreadsheets/d/1av0iPfTKLKwpsc8XJ_YWesY_MFvhRAN8Nr70Vl0pqbE/export?format=csv&gid=1586407868"
 
 # Fungsi untuk membaca data dari Google Sheets
 @st.cache_data
@@ -56,3 +56,4 @@ else:
 
 # Catatan kecil
 st.caption("Data peserta bersumber dari Google Sheets.")
+
